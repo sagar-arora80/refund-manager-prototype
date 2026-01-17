@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRefunds } from '../context/RefundContext';
-import { X, CheckCircle, Clock, AlertCircle, ChevronRight, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, CheckCircle, Clock, AlertCircle, ChevronRight, User, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
 
+// --- Sub-Components ---
 const StatusBadge = ({ status }) => {
     const styles = {
         approved: "bg-green-100 text-green-700",
@@ -26,6 +27,48 @@ const StatusBadge = ({ status }) => {
     );
 };
 
+const CountdownTimer = ({ expiresAt }) => {
+    const [timeLeft, setTimeLeft] = useState('');
+    const [isUrgent, setIsUrgent] = useState(false);
+
+    useEffect(() => {
+        const calculateTime = () => {
+            if (!expiresAt) return;
+            const now = Date.now();
+            const diff = expiresAt - now;
+
+            if (diff <= 0) {
+                setTimeLeft('Expired');
+                setIsUrgent(false);
+                return;
+            }
+
+            const mins = Math.floor((diff / 1000) / 60);
+            const secs = Math.floor((diff / 1000) % 60);
+
+            setTimeLeft(`${mins}:${secs < 10 ? '0' : ''}${secs}`);
+            setIsUrgent(mins < 5); // Urgent if less than 5 mins
+        };
+
+        calculateTime();
+        const timer = setInterval(calculateTime, 1000);
+        return () => clearInterval(timer);
+    }, [expiresAt]);
+
+    if (!expiresAt) return null;
+
+    return (
+        <div className={clsx(
+            "text-xs font-bold px-2 py-1 rounded flex items-center gap-1.5 transition-colors",
+            isUrgent ? "bg-red-100 text-red-700 animate-pulse" : "bg-yellow-100 text-yellow-800"
+        )}>
+            <Clock size={12} />
+            To Platform in {timeLeft}
+        </div>
+    );
+};
+
+
 const TimelineItem = ({ title, time, active, isLast, subtitle }) => (
     <div className="relative pb-6 pl-6 border-l-2 border-gray-100 last:border-0 last:pb-0">
         <div className={clsx(
@@ -40,7 +83,7 @@ const TimelineItem = ({ title, time, active, isLast, subtitle }) => (
     </div>
 );
 
-// Extracted Modal Component for cleaner state management
+
 const RefundDetailModal = ({ refund, onClose, onAction }) => {
     const [isOrderExpanded, setIsOrderExpanded] = useState(false);
 
@@ -55,7 +98,9 @@ const RefundDetailModal = ({ refund, onClose, onAction }) => {
                 {/* Header */}
                 <div className="flex justify-between items-start mb-6">
                     <div>
-                        <h3 className="text-h2 font-bold mb-1">Refund {refund.status === 'review' ? 'Review' : 'Details'}</h3>
+                        <h3 className="text-h2 font-bold mb-1">
+                            {refund.status === 'review' ? 'Refund Review' : 'Refund Details'}
+                        </h3>
                         <div className="flex items-center gap-2 text-sm text-secondary">
                             <span>ID: {refund.id}</span>
                             <span className="w-1 h-1 rounded-full bg-gray-300" />
@@ -67,46 +112,63 @@ const RefundDetailModal = ({ refund, onClose, onAction }) => {
                     </button>
                 </div>
 
-                {/* Main Stats */}
+                {/* Main Stats with Timer */}
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl mb-6">
                     <div>
-                        <div className="text-xs text-secondary uppercase tracking-wider font-semibold mb-1">Amount</div>
+                        <div className="text-xs text-secondary uppercase tracking-wider font-semibold mb-1">Refund Amount</div>
                         <div className="text-2xl font-bold text-gray-900">₹{refund.amount}</div>
+                        {/* Refund Context Subtitle */}
+                        <div className="text-xs text-gray-500 mt-1 font-medium">
+                            (Includes {refund.items?.length || 1} items + Tax)
+                        </div>
                     </div>
-                    <div className="text-right">
-                        <div className="text-xs text-secondary uppercase tracking-wider font-semibold mb-1">Status</div>
-                        <StatusBadge status={refund.status} />
+                    <div className="text-right flex flex-col items-end gap-2">
+                        <div className="text-xs text-secondary uppercase tracking-wider font-semibold">Status</div>
+                        {refund.status === 'review' ? (
+                            <CountdownTimer expiresAt={refund.expiresAt} />
+                        ) : (
+                            <StatusBadge status={refund.status} />
+                        )}
                     </div>
                 </div>
 
-                {/* Collapsible Order Details */}
-                <div className="border border-gray-200 rounded-xl overflow-hidden mb-6 transition-all">
+                {/* Enhanced Accordion */}
+                <div className={clsx(
+                    "border rounded-xl overflow-hidden mb-6 transition-all",
+                    isOrderExpanded ? "border-indigo-200 ring-2 ring-indigo-50" : "border-gray-200"
+                )}>
                     <button
                         onClick={() => setIsOrderExpanded(!isOrderExpanded)}
-                        className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
+                        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-indigo-50/50 transition-colors"
                     >
-                        <div className="text-left">
-                            <div className="font-semibold text-gray-900">Order {refund.orderId}</div>
-                            <div className="text-xs text-secondary">Ordered by {refund.customer}</div>
+                        <div className="text-left flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shrink-0">
+                                <span className="font-bold text-gray-600 text-xs">#{refund.orderId.replace('#', '')}</span>
+                            </div>
+                            <div>
+                                <div className="font-semibold text-gray-900">Order Items</div>
+                                <div className="text-xs text-secondary underline decoration-dotted">View details</div>
+                            </div>
                         </div>
-                        {isOrderExpanded ? <ChevronUp size={20} className="text-gray-400" /> : <ChevronDown size={20} className="text-gray-400" />}
+                        {isOrderExpanded ? <ChevronUp size={20} className="text-primary" /> : <ChevronDown size={20} className="text-gray-400" />}
                     </button>
 
                     {isOrderExpanded && (
-                        <div className="p-4 pt-0 bg-gray-50/50 border-t border-gray-100 animate-in slide-in-from-top-2 duration-200">
-                            <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3 mt-3">Items</div>
-                            <div className="space-y-2">
+                        <div className="p-4 bg-white border-t border-gray-100 animate-in slide-in-from-top-2 duration-200">
+                            <div className="space-y-3">
                                 {refund.items?.map((item, i) => (
-                                    <div key={i} className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-700 font-medium">{item}</span>
-                                        {/* Mock price for item */}
-                                        <span className="text-gray-500">x1</span>
+                                    <div key={i} className="flex justify-between items-start text-sm">
+                                        <div className="flex gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 shrink-0" />
+                                            <span className="text-gray-700 font-medium leading-relaxed">{item}</span>
+                                        </div>
+                                        <span className="text-gray-500 tabular-nums">x1</span>
                                     </div>
                                 ))}
                             </div>
-                            <div className="mt-4 pt-3 border-t border-gray-200 flex justify-between items-center">
-                                <span className="text-sm font-semibold text-gray-900">Total Order Value</span>
-                                <span className="text-sm font-bold text-gray-900">₹{refund.amount + 120}</span> {/* Mock total */}
+                            <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-gray-500 text-xs">
+                                <span>Customer: {refund.customer}</span>
+                                <span>Total Value: ₹{refund.amount + 120}</span>
                             </div>
                         </div>
                     )}
@@ -157,6 +219,7 @@ const RefundDetailModal = ({ refund, onClose, onAction }) => {
     );
 };
 
+// --- Main Page ---
 export default function ActivityPage() {
     const { data, actions } = useRefunds();
     const [selectedRefund, setSelectedRefund] = useState(null);
@@ -201,8 +264,10 @@ export default function ActivityPage() {
                                     <div className="text-sm text-secondary">
                                         Requested by <span className="text-gray-900 font-medium">{refund.customer}</span> • {refund.time}
                                     </div>
-                                    <div className="text-primary text-xs font-bold flex items-center bg-indigo-50 px-2 py-1 rounded">
-                                        Review <ChevronRight size={14} />
+                                    {/* Timer Badge on Card */}
+                                    <div className="flex items-center">
+                                        <CountdownTimer expiresAt={refund.expiresAt} />
+                                        <ChevronRight size={16} className="text-gray-300 ml-1" />
                                     </div>
                                 </div>
                             </div>

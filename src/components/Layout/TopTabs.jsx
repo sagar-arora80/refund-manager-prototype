@@ -6,7 +6,7 @@ import { useRefunds } from '../../context/RefundContext';
 export default function TopTabs({ activeTab, onTabChange }) {
     const { data } = useRefunds();
     const tabs = [
-        { id: 'config', label: 'Policy' },
+        { id: 'config', label: 'Policy Configuration' },
         { id: 'activity', label: 'Refund Activity' },
     ];
 

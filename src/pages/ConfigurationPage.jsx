@@ -16,7 +16,7 @@ const RadioCardItem = ({ value, selectedValue, onSelect, label, description, chi
         className={clsx(
             "border rounded-xl p-4 mb-3 cursor-pointer transition-all relative overflow-hidden",
             selectedValue === value
-                ? "border-primary bg-indigo-50/30 ring-1 ring-primary" // Premium active state
+                ? "border-primary bg-indigo-50/30 ring-1 ring-primary"
                 : "border-gray-200 bg-white hover:border-gray-300"
         )}
     >
@@ -34,7 +34,6 @@ const RadioCardItem = ({ value, selectedValue, onSelect, label, description, chi
                 <div className="text-sm text-secondary mt-1 leading-relaxed">
                     {description}
                 </div>
-                {/* Embedded Content (e.g., Threshold Inputs) */}
                 {selectedValue === value && children && (
                     <div className="mt-4 pt-4 border-t border-indigo-100/50 animate-in fade-in slide-in-from-top-2 duration-200" onClick={e => e.stopPropagation()}>
                         {children}
@@ -93,9 +92,8 @@ export default function ConfigurationPage() {
     const { settings, actions } = useRefunds();
     const [showToast, setShowToast] = useState(false);
 
-    // Helper for Order States
     const toggleOrderState = (state) => {
-        const current = settings.reviewTriggers.orderStates || []; // Safety check
+        const current = settings.reviewTriggers.orderStates || [];
         if (current.includes(state)) {
             settings.setReviewTriggers({
                 ...settings.reviewTriggers,
@@ -125,7 +123,6 @@ export default function ConfigurationPage() {
                     description="Decide when refunds are approved instantly."
                 />
 
-                {/* Approval Mode - Redesigned as Radio Cards */}
                 <div className="mb-6">
                     <RadioCardItem
                         value="hybrid"
@@ -134,7 +131,6 @@ export default function ConfigurationPage() {
                         label="Hybrid (Recommended)"
                         description="Auto-approve low-value refunds. Manually review high-value or risky ones."
                     >
-                        {/* Embedded Threshold for Hybrid */}
                         <div className="bg-white/50 p-3 rounded-lg border border-indigo-100">
                             <label className="text-xs font-bold text-primary uppercase tracking-wider mb-2 block">Auto-Approve Up To</label>
                             <div className="flex items-center gap-4">
@@ -174,7 +170,6 @@ export default function ConfigurationPage() {
                     />
                 </div>
 
-                {/* Refund Types - Redesigned as Checkboxes */}
                 <div className="card">
                     <label className="text-sm font-semibold mb-3 block">Allowed Refund Types</label>
                     <div className="grid grid-cols-2 gap-3">
@@ -203,34 +198,9 @@ export default function ConfigurationPage() {
                 />
 
                 <div className="card space-y-5">
-                    {/* Amount Trigger */}
-                    <div className="p-3 border rounded-xl bg-gray-50/50">
-                        <label className="flex items-center gap-3 mb-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={settings.reviewTriggers.amount}
-                                onChange={(e) => settings.setReviewTriggers({ ...settings.reviewTriggers, amount: e.target.checked })}
-                                className="w-5 h-5 text-primary rounded focus:ring-primary border-gray-300"
-                            />
-                            <span className="font-medium text-gray-900">Refund amount is high</span>
-                        </label>
+                    {/* REMOVED: Redundant "Amount" trigger since Hybrid mode handles it */}
 
-                        {settings.reviewTriggers.amount && (
-                            <div className="ml-8 animate-in fade-in slide-in-from-top-1">
-                                <div className="relative max-w-[140px]">
-                                    <span className="absolute left-3 top-2.5 text-gray-500 font-medium">₹ &gt;</span>
-                                    <input
-                                        type="number"
-                                        className="input pl-10 py-2 font-bold text-gray-900"
-                                        value={settings.highValueThreshold}
-                                        onChange={(e) => settings.setHighValueThreshold(Number(e.target.value))}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Order State Triggers - NEW */}
+                    {/* Order State Triggers */}
                     <div>
                         <label className="text-sm font-semibold mb-3 block">Review refunds for orders in these states:</label>
                         <div className="grid grid-cols-1 gap-2">
@@ -262,7 +232,9 @@ export default function ConfigurationPage() {
                                 <option value={60}>60 mins</option>
                             </select>
                         </div>
-                        <p className="text-xs text-secondary">If no action is taken by this time, the refund will default to <strong>{settings.expirationAction === 'platform' ? 'Platform Review' : 'Auto-Approval'}</strong>.</p>
+                        <div className="text-xs text-secondary leading-relaxed">
+                            If you don't take action within <span className="font-bold text-gray-900">{settings.reviewTimeLimit} mins</span> of the refund being requested, it will automatically default to <strong>Platform Review</strong> to prevent bad customer experience.
+                        </div>
                     </div>
                 </div>
             </section>
@@ -284,10 +256,9 @@ export default function ConfigurationPage() {
                 </div>
             </section>
 
-            {/* Footer Actions - Static Implementation */}
             <div className="mt-8 pt-6 pb-8 border-t border-gray-200">
                 <button onClick={handleSave} className="btn mb-4 shadow-lg shadow-indigo-200 text-lg">
-                    Save Refund Policy
+                    Save Configuration
                 </button>
                 <button onClick={actions.resetDefaults} className="btn btn-secondary w-full text-center">
                     Reset to Defaults
@@ -300,7 +271,7 @@ export default function ConfigurationPage() {
                 showToast ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"
             )}>
                 <Check size={18} className="text-green-400" />
-                <span className="text-sm font-medium">Policy saved successfully</span>
+                <span className="text-sm font-medium">Settings saved</span>
             </div>
 
         </div>

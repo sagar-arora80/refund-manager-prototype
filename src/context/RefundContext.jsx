@@ -59,9 +59,11 @@ export const RefundProvider = ({ children }) => {
 
     const [refunds, setRefunds] = useState([
         { id: 'R101', orderId: '#9281', amount: 150, status: 'approved', time: '8 mins ago', type: 'auto', items: ['Chicken Tikka Masala x1'], customer: 'Rahul K.' },
-        { id: 'R102', orderId: '#9279', amount: 650, status: 'review', time: '25 mins ago', type: 'manual', items: ['Family Feast Combo'], customer: 'Priya S.' },
+        // Expires in 14 mins from now
+        { id: 'R102', orderId: '#9279', amount: 650, status: 'review', time: '2 mins ago', expiresAt: Date.now() + 14 * 60 * 1000, type: 'manual', items: ['Family Feast Combo'], customer: 'Priya S.' },
         { id: 'R103', orderId: '#9201', amount: 120, status: 'completed', time: '2 hours ago', type: 'auto', items: ['Garlic Naan x2'], customer: 'Amit B.' },
-        { id: 'R104', orderId: '#9155', amount: 450, status: 'review', time: 'Yesterday', type: 'manual', items: ['Paneer Butter Masala', 'Jeera Rice'], customer: 'John D.' },
+        // Expires in 4 mins from now
+        { id: 'R104', orderId: '#9155', amount: 450, status: 'review', time: '26 mins ago', expiresAt: Date.now() + 4 * 60 * 1000, type: 'manual', items: ['Paneer Butter Masala', 'Jeera Rice'], customer: 'John D.' },
     ]);
 
     const processRefund = (id, action) => {
