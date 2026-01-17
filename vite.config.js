@@ -5,4 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/refund-manager-prototype/', // Base URL for GitHub Pages
+  build: {
+    outDir: 'docs',
+  },
 })
